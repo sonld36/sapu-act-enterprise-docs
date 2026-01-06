@@ -1,0 +1,2443 @@
+openapi: "3.0.3"
+info:
+  title: "sapo_accounting_services Tax Declaration API"
+  description: "Tax Declaration endpoints for enterprise accounting"
+  version: "1.0.0"
+servers:
+  - url: "https://sapo_accounting_services"
+
+paths:
+  # ============================================
+  # TaxDeclarationController - /admin/tax_declarations
+  # ============================================
+  /admin/tax_declarations:
+    post:
+      summary: "POST admin/tax_declarations"
+      operationId: "createDeclaration"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTaxDeclarationRequest"
+        required: true
+      responses:
+        "201":
+          description: "Created"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TaxDeclarationResponse"
+
+    get:
+      summary: "GET admin/tax_declarations"
+      operationId: "getDeclarations"
+      parameters:
+        - in: query
+          name: sort
+          schema:
+            type: string
+            description: a comma delimited list of sort fields:sort order
+            example: "created_at:desc"
+        - in: query
+          name: page
+          schema:
+            type: integer
+            format: int32
+        - in: query
+          name: size
+          schema:
+            type: integer
+            format: int32
+        - in: query
+          name: declaration_period_from
+          schema:
+            type: string
+            description: "Format: YYYY-MM or YYYY-Q1/Q2/Q3/Q4"
+        - in: query
+          name: declaration_period_to
+          schema:
+            type: string
+        - in: query
+          name: created_date_from
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: created_date_to
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: statuses
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [ draft, submitted, approved, rejected, deleted ]
+        - in: query
+          name: declaration_forms
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [ gtgt_01 ]
+        - in: query
+          name: period_type
+          schema:
+            type: string
+            enum: [ monthly, quarterly ]
+        - in: query
+          name: period
+          schema:
+            type: integer
+            format: int32
+        - in: query
+          name: year
+          schema:
+            type: integer
+            format: int32
+        - in: query
+          name: declaration_type
+          schema:
+            type: string
+            enum: [ initial, supplementary ]
+        - in: query
+          name: supplementary_no
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: "OK"
+          headers:
+            X-Total-Count:
+              schema:
+                type: integer
+              description: Total number of records matched
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TaxDeclarationListItemResponse"
+
+  /admin/tax_declarations/{id}:
+    get:
+      summary: "GET admin/tax_declarations/{id}"
+      operationId: "getDeclaration"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TaxDeclarationResponse"
+
+    put:
+      summary: "PUT admin/tax_declarations/{id}"
+      operationId: "updateDeclaration"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateTaxDeclarationRequest"
+        required: true
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TaxDeclarationResponse"
+
+    delete:
+      summary: "DELETE admin/tax_declarations/{id}"
+      operationId: "deleteDeclaration"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: "No Content"
+
+  /admin/tax_declarations/{id}/status:
+    put:
+      summary: "PUT admin/tax_declarations/{id}/status"
+      operationId: "updateStatus"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TaxDeclarationStatusUpdateRequest"
+        required: true
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TaxDeclarationResponse"
+
+  /admin/tax_declarations/pending:
+    get:
+      summary: "GET admin/tax_declarations/pending"
+      operationId: "getPendingDeclarations"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PendingDeclarationListResponse"
+
+  /admin/tax_declarations/validate_duplications:
+    post:
+      summary: "POST admin/tax_declarations/validate_duplications"
+      operationId: "validateDuplications"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ValidateDuplicationsRequest"
+        required: true
+      responses:
+        "200":
+          description: "OK"
+
+  /admin/tax_declarations/drop_session/{sessionId}:
+    post:
+      summary: "POST admin/tax_declarations/drop_session/{sessionId}"
+      operationId: "dropSession"
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: "OK"
+
+  # ============================================
+  # TaxDeclaration01GTGTController - /admin/tax_declarations/gtgt_01
+  # ============================================
+  /admin/tax_declarations/gtgt_01/indicators:
+    get:
+      summary: "GET admin/tax_declarations/gtgt_01/indicators"
+      operationId: "initializeIndicators"
+      description: |
+        Initialize indicator values for a new declaration.
+        Returns all indicators from template with default values.
+        item_22 (Thuế GTGT còn được khấu trừ kỳ trước chuyển sang) is calculated
+        from item_43 of the most recent previous period declaration, regardless
+        of period type (monthly or quarterly).
+
+        Examples:
+        - Creating Q4: uses item_43 from September (monthly) if it's the most recent
+        - Creating October (monthly): uses item_43 from Q3 if it's the most recent
+      parameters:
+        - in: query
+          name: period_type
+          required: true
+          schema:
+            $ref: "#/components/schemas/PeriodType"
+          description: "Period type (monthly or quarterly)"
+        - in: query
+          name: period
+          required: true
+          schema:
+            type: integer
+            format: int32
+            minimum: 1
+            maximum: 12
+          description: "Period number (1-12 for monthly, 1-4 for quarterly)"
+        - in: query
+          name: year
+          required: true
+          schema:
+            type: integer
+            format: int32
+            minimum: 1
+          description: "Year"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TaxDeclarationDetailDto"
+        "400":
+          description: "Bad Request - Validation error"
+        "404":
+          description: "Not Found - Template not found for given period"
+
+  /admin/tax_declarations/gtgt_01/appendix/bkbr01_1:
+    get:
+      summary: "GET admin/tax_declarations/gtgt_01/appendix/bkbr01_1"
+      operationId: "getBKBR011"
+      parameters:
+        - in: query
+          name: session_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: from_date
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: to_date
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: declaration_id
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: page
+          schema:
+            type: integer
+            format: int32
+        - in: query
+          name: size
+          schema:
+            type: integer
+            format: int32
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SalesLedgerInformation"
+
+    post:
+      summary: "POST admin/tax_declarations/gtgt_01/appendix/bkbr01_1"
+      operationId: "updateBKBR011"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SalesLedgerDraftUpdateRequest"
+        required: true
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SalesLedgerDraftUpdateResponse"
+
+  /admin/tax_declarations/gtgt_01/appendix/bkmv01_2:
+    get:
+      summary: "GET admin/tax_declarations/gtgt_01/appendix/bkmv01_2"
+      operationId: "getBKMV012"
+      parameters:
+        - in: query
+          name: session_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: from_date
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: to_date
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: declaration_id
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: page
+          schema:
+            type: integer
+            format: int32
+        - in: query
+          name: size
+          schema:
+            type: integer
+            format: int32
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PurchaseLedgerInformation"
+
+    post:
+      summary: "POST admin/tax_declarations/gtgt_01/appendix/bkmv01_2"
+      operationId: "updateBKMV012"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PurchaseLedgerDraftUpdateRequest"
+        required: true
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PurchaseLedgerDraftUpdateResponse"
+
+  /admin/tax_declarations/gtgt_01/appendix/pl142:
+    get:
+      summary: "GET admin/tax_declarations/gtgt_01/appendix/pl142"
+      operationId: "getPL142"
+      parameters:
+        - in: query
+          name: session_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: types
+          required: true
+          schema:
+            type: array
+            items:
+              $ref: "#/components/schemas/TableListType"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Pl142Information"
+
+  /admin/tax_declarations/gtgt_01/appendix/{declarationId}/bkbr01_1:
+    post:
+      summary: "POST admin/tax_declarations/gtgt_01/appendix/{declarationId}/bkbr01_1"
+      operationId: "updateDeclarationBKBR011"
+      parameters:
+        - name: declarationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SalesLedgerDeclarationUpdateRequest"
+        required: true
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeclarationAppendixUpdateResponse"
+
+  /admin/tax_declarations/gtgt_01/appendix/{declarationId}/bkmv01_2:
+    post:
+      summary: "POST admin/tax_declarations/gtgt_01/appendix/{declarationId}/bkmv01_2"
+      operationId: "updateDeclarationBKMV012"
+      parameters:
+        - name: declarationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PurchaseLedgerDeclarationUpdateRequest"
+        required: true
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeclarationAppendixUpdateResponse"
+
+  /admin/tax_declarations/gtgt_01/sales_vouchers:
+    get:
+      summary: "GET admin/tax_declarations/gtgt_01/sales_vouchers"
+      operationId: "getSalesVouchers"
+      parameters:
+        - in: query
+          name: session_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: from_date
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: to_date
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: query
+          schema:
+            type: string
+        - in: query
+          name: page
+          schema:
+            type: integer
+            format: int32
+        - in: query
+          name: size
+          schema:
+            type: integer
+            format: int32
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SalesVoucherInformationResponse"
+
+    post:
+      summary: "POST admin/tax_declarations/gtgt_01/sales_vouchers"
+      operationId: "updateSalesVouchers"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VoucherSelectionRequest"
+        required: true
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VoucherSelectionResponse"
+
+  /admin/tax_declarations/gtgt_01/purchase_vouchers:
+    get:
+      summary: "GET admin/tax_declarations/gtgt_01/purchase_vouchers"
+      operationId: "getPurchaseVouchers"
+      parameters:
+        - in: query
+          name: session_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: from_date
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: to_date
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: query
+          schema:
+            type: string
+        - in: query
+          name: page
+          schema:
+            type: integer
+            format: int32
+        - in: query
+          name: size
+          schema:
+            type: integer
+            format: int32
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PurchaseVoucherInformationResponse"
+
+    post:
+      summary: "POST admin/tax_declarations/gtgt_01/purchase_vouchers"
+      operationId: "updatePurchaseVouchers"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VoucherSelectionRequest"
+        required: true
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VoucherSelectionResponse"
+
+  /admin/tax_declarations/gtgt_01/{declaration_id}/sales_vouchers:
+    get:
+      summary: "GET admin/tax_declarations/gtgt_01/{declaration_id}/sales_vouchers"
+      operationId: "getDeclarationSalesVouchers"
+      parameters:
+        - name: declaration_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: query
+          schema:
+            type: string
+        - in: query
+          name: page
+          schema:
+            type: integer
+            format: int32
+        - in: query
+          name: size
+          schema:
+            type: integer
+            format: int32
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SalesVoucherInformationResponse"
+
+  /admin/tax_declarations/gtgt_01/{declaration_id}/purchase_vouchers:
+    get:
+      summary: "GET admin/tax_declarations/gtgt_01/{declaration_id}/purchase_vouchers"
+      operationId: "getDeclarationPurchaseVouchers"
+      parameters:
+        - name: declaration_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: query
+          schema:
+            type: string
+        - in: query
+          name: page
+          schema:
+            type: integer
+            format: int32
+        - in: query
+          name: size
+          schema:
+            type: integer
+            format: int32
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PurchaseVoucherInformationResponse"
+
+  /admin/tax_declarations/gtgt_01/appendix/bkbr01_1/validate:
+    get:
+      summary: "GET admin/tax_declarations/gtgt_01/appendix/bkbr01_1/validate"
+      operationId: "validateBKBR011"
+      parameters:
+        - in: query
+          name: session_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: limit
+          required: true
+          schema:
+            type: integer
+            format: int32
+            minimum: 1
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LedgerValidationResponse"
+
+  /admin/tax_declarations/gtgt_01/appendix/bkmv01_2/validate:
+    get:
+      summary: "GET admin/tax_declarations/gtgt_01/appendix/bkmv01_2/validate"
+      operationId: "validateBKMV012"
+      parameters:
+        - in: query
+          name: session_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: limit
+          required: true
+          schema:
+            type: integer
+            format: int32
+            minimum: 1
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LedgerValidationResponse"
+
+  /admin/tax_declarations/gtgt_01/appendix/pl142/{table_list_type}/invoices:
+    get:
+      summary: "GET admin/tax_declarations/gtgt_01/appendix/pl142/{table_list_type}/invoices"
+      operationId: "getVatEightPercentInvoices"
+      parameters:
+        - name: table_list_type
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [ sales, purchase ]
+        - in: query
+          name: session_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: from_date
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: to_date
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: query
+          schema:
+            type: string
+        - in: query
+          name: page
+          schema:
+            type: integer
+            format: int32
+        - in: query
+          name: size
+          schema:
+            type: integer
+            format: int32
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InventoryItemResponse"
+
+  /admin/tax_declarations/gtgt_01/non_taxable_goods:
+    get:
+      summary: "GET admin/tax_declarations/gtgt_01/non_taxable_goods"
+      operationId: "getNonTaxableSaleVouchers"
+      parameters:
+        - in: query
+          name: session_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: from_date
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: to_date
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NonTaxableSalePagingResponse"
+
+  /admin/tax_declarations/gtgt_01/{id}/generate_session_edit:
+    post:
+      summary: "POST admin/tax_declarations/gtgt_01/{id}/generate_session_edit"
+      operationId: "generateSessionEdit"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenerateSessionEditResponse"
+
+  /admin/tax_declarations/gtgt_01/{id}/bkbr01:
+    get:
+      summary: "GET admin/tax_declarations/gtgt_01/{id}/bkbr01"
+      operationId: "getSalesLedger"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: page
+          schema:
+            type: integer
+            format: int32
+        - in: query
+          name: size
+          schema:
+            type: integer
+            format: int32
+      responses:
+        "200":
+          description: "OK"
+          headers:
+            X-Total-Count:
+              schema:
+                type: integer
+              description: Total number of records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LedgerDetailResponse"
+
+  /admin/tax_declarations/gtgt_01/{id}/bkmv01_2:
+    get:
+      summary: "GET admin/tax_declarations/gtgt_01/{id}/bkmv01_2"
+      operationId: "getPurchaseLedger"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: page
+          schema:
+            type: integer
+            format: int32
+        - in: query
+          name: size
+          schema:
+            type: integer
+            format: int32
+      responses:
+        "200":
+          description: "OK"
+          headers:
+            X-Total-Count:
+              schema:
+                type: integer
+              description: Total number of records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LedgerDetailResponse"
+
+  # ============================================
+  # DeclarationRegistrationController - /admin/tax_declarations/declaration_registrations
+  # ============================================
+  /admin/tax_declarations/declaration_registrations:
+    get:
+      summary: "GET admin/tax_declarations/declaration_registrations"
+      operationId: "getDeclarationRegistrations"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DeclarationRegistrationResponse"
+
+    put:
+      summary: "PUT admin/tax_declarations/declaration_registrations"
+      operationId: "upsertDeclarationRegistrations"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeclarationRegistrationListRequest"
+        required: true
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DeclarationRegistrationResponse"
+
+  # ============================================
+  # TaxTemplateController - /admin/tax_declaration_templates
+  # ============================================
+  /admin/tax_declaration_templates:
+    get:
+      summary: "GET admin/tax_declaration_templates"
+      operationId: "getTemplate"
+      parameters:
+        - in: query
+          name: ref_type
+          required: true
+          schema:
+            type: integer
+            format: int32
+        - in: query
+          name: period_date
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TaxTemplateResponse"
+
+  # ============================================
+  # TaxAuthoritySettingsController - /admin/tax_declarations/tax_authority_settings
+  # ============================================
+  /admin/tax_declarations/tax_authority_settings:
+    get:
+      summary: "GET admin/tax_declarations/tax_authority_settings"
+      operationId: "getTaxAuthoritySettings"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TaxAuthoritySettingsResponse"
+
+    put:
+      summary: "PUT admin/tax_declarations/tax_authority_settings"
+      operationId: "upsertTaxAuthoritySettings"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TaxAuthoritySettingsRequest"
+        required: true
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TaxAuthoritySettingsResponse"
+
+components:
+  schemas:
+    # ============================================
+    # Common Types
+    # ============================================
+    BigDecimal:
+      type: number
+      format: double
+
+    Instant:
+      type: string
+      format: date-time
+      description: ISO-8601 format timestamp
+
+    # ============================================
+    # Enums
+    # ============================================
+    TaxDeclarationForm:
+      type: string
+      enum: [ gtgt_01 ]
+
+    DeclarationStatus:
+      type: string
+      enum: [ draft, submitted, approved, rejected, deleted ]
+
+    PeriodType:
+      type: string
+      enum: [ monthly, quarterly ]
+
+    DeclarationType:
+      type: string
+      enum: [ initial, supplementary ]
+
+    TableListType:
+      type: string
+      enum: [ sales, purchase ]
+
+    BusinessTypeName:
+      type: string
+      enum: [ general, lottery, oilgas, infra, powergen ]
+
+    GTGT01AppendixCode:
+      type: string
+      enum: [ bkbr_01_1, bkmv_01_2, pl_01_6_cssx, pl_01_6_vt_cuoc_tra_sau, pl_142_2024 ]
+
+    DeclarationCode:
+      type: string
+      enum: [ gtgt_01, tndn_03 ]
+
+    DeclarationPeriod:
+      type: string
+      enum: [ monthly, quarterly, yearly ]
+
+    GroupCode:
+      type: string
+      enum: [ group_0, group_1, group_2, group_3, group_4, group_5 ]
+
+    DataType:
+      type: string
+      enum: [ text, decimal, bool, date, integer ]
+
+    FieldNameRequired:
+      type: string
+      enum: [ invoice_number, invoice_date, customer_name, supplier_name ]
+
+    LedgerAction:
+      type: string
+      enum: [ add, update, delete ]
+
+    # ============================================
+    # Request Schemas
+    # ============================================
+    CreateTaxDeclarationRequest:
+      type: object
+      properties:
+        tax_declaration:
+          type: object
+          properties:
+            type:
+              $ref: "#/components/schemas/TaxDeclarationForm"
+            tax_agent_full_name:
+              type: string
+            tax_agent_certificate_number:
+              type: string
+            signer_name:
+              type: string
+            signed_date:
+              $ref: "#/components/schemas/Instant"
+            tax_authority_code:
+              type: string
+            tax_authority_name:
+              type: string
+            notes:
+              type: string
+            taxpayer_name:
+              type: string
+              maxLength: 255
+            taxpayer_tax_code:
+              type: string
+              maxLength: 50
+            business_location_address:
+              type: string
+              maxLength: 500
+            period_config:
+              $ref: "#/components/schemas/TaxDeclarationConfigRequest"
+            td01_gtgt_config:
+              $ref: "#/components/schemas/TaxDeclaration01GTGTPeriodConfigDto"
+            details:
+              type: array
+              items:
+                $ref: "#/components/schemas/TaxDeclarationDetailItemRequest"
+            session_id:
+              type: string
+              format: uuid
+            pl142:
+              $ref: "#/components/schemas/Pl142AppendixRequest"
+            non_taxable_goods:
+              type: array
+              items:
+                $ref: "#/components/schemas/NonTaxableGoodsRequest"
+            dependent_unit_name:
+              type: string
+              maxLength: 500
+              description: "[09] Tên đơn vị phụ thuộc"
+            dependent_unit_tax_code:
+              type: string
+              maxLength: 50
+              description: "[10] Mã số thuế đơn vị phụ thuộc"
+            dependent_unit_province_code:
+              type: string
+              maxLength: 50
+              description: "[11c] Mã tỉnh/thành phố đơn vị phụ thuộc"
+            dependent_unit_province_name:
+              type: string
+              description: "[11c] Tên tỉnh/thành phố đơn vị phụ thuộc"
+            dependent_unit_ward_code:
+              type: string
+              maxLength: 50
+              description: "[11a] Mã xã/phường đơn vị phụ thuộc"
+            dependent_unit_ward_name:
+              type: string
+              description: "[11a] Tên xã/phường đơn vị phụ thuộc"
+          required:
+            - type
+            - signer_name
+            - period_config
+
+    UpdateTaxDeclarationRequest:
+      type: object
+      properties:
+        tax_declaration:
+          type: object
+          properties:
+            declaration_name:
+              type: string
+            tax_authority_code:
+              type: string
+            tax_authority_name:
+              type: string
+            supplementary_times:
+              type: integer
+              format: int32
+            notes:
+              type: string
+            period_config:
+              $ref: "#/components/schemas/TaxDeclaration01GTGTPeriodConfigDto"
+            details:
+              type: array
+              items:
+                $ref: "#/components/schemas/TaxDeclarationDetailItemRequest"
+            sales_ledger_details:
+              type: array
+              items:
+                $ref: "#/components/schemas/SalesDraftLedgerDetailDto"
+            purchase_ledger_details:
+              type: array
+              items:
+                $ref: "#/components/schemas/PurchaseDraftLedgerDetailDto"
+            session_id:
+              type: string
+              format: uuid
+            pl142:
+              $ref: "#/components/schemas/Pl142AppendixRequest"
+            non_taxable_goods:
+              type: array
+              items:
+                $ref: "#/components/schemas/NonTaxableGoodsRequest"
+
+    TaxDeclarationStatusUpdateRequest:
+      type: object
+      properties:
+        tax_declaration:
+          type: object
+          properties:
+            status:
+              type: string
+              enum: [ draft, submitted, approved, rejected ]
+          required:
+            - status
+
+    ValidateDuplicationsRequest:
+      type: object
+      properties:
+        config_validation:
+          type: object
+          properties:
+            declaration_form:
+              $ref: "#/components/schemas/TaxDeclarationForm"
+            period_type:
+              $ref: "#/components/schemas/PeriodType"
+            period:
+              type: integer
+              format: int32
+            year:
+              type: integer
+              format: int32
+          required:
+            - period_type
+            - period
+            - year
+
+    TaxDeclaration01GTGTPeriodConfigDto:
+      type: object
+      properties:
+        business_type_name:
+          $ref: "#/components/schemas/BusinessTypeName"
+        appendixes:
+          type: array
+          items:
+            $ref: "#/components/schemas/GTGT01AppendixCode"
+
+    TaxDeclarationDetailItemRequest:
+      type: object
+      properties:
+        item_code:
+          type: string
+          maxLength: 50
+        value:
+          type: string
+          maxLength: 500
+      required:
+        - item_code
+
+    Pl142AppendixRequest:
+      type: object
+      properties:
+        purchase_reductions:
+          type: array
+          items:
+            $ref: "#/components/schemas/Pl142PurchaseReductionRequest"
+        sales_reductions:
+          type: array
+          items:
+            $ref: "#/components/schemas/Pl142SalesReductionRequest"
+
+    Pl142PurchaseReductionRequest:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        inventory_item_name:
+          type: string
+        variant_id:
+          type: string
+          format: uuid
+        turnover_amount:
+          $ref: "#/components/schemas/BigDecimal"
+        vat_amount:
+          $ref: "#/components/schemas/BigDecimal"
+      required:
+        - inventory_item_name
+        - turnover_amount
+
+    Pl142SalesReductionRequest:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        customer_name:
+          type: string
+        customer_tax_code:
+          type: string
+        inventory_item_name:
+          type: string
+        turnover_amount:
+          $ref: "#/components/schemas/BigDecimal"
+        deduction_tax_amount:
+          $ref: "#/components/schemas/BigDecimal"
+      required:
+        - customer_name
+        - inventory_item_name
+        - turnover_amount
+
+    NonTaxableGoodsRequest:
+      type: object
+      properties:
+        item_name:
+          type: string
+        turnover_amount:
+          $ref: "#/components/schemas/BigDecimal"
+
+    TaxDeclarationConfigRequest:
+      type: object
+      properties:
+        period_type:
+          $ref: "#/components/schemas/PeriodType"
+        period:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 12
+        year:
+          type: integer
+          format: int32
+          minimum: 1
+        declaration_type:
+          $ref: "#/components/schemas/DeclarationType"
+        supplementary_no:
+          type: integer
+          format: int64
+        supplementary_date:
+          $ref: "#/components/schemas/Instant"
+      required:
+        - period_type
+        - period
+        - year
+
+    VoucherSelectionRequest:
+      type: object
+      properties:
+        voucher_selection:
+          type: object
+          properties:
+            session_id:
+              type: string
+              format: uuid
+            items:
+              type: array
+              items:
+                $ref: "#/components/schemas/VoucherSelectionItem"
+          required:
+            - session_id
+            - items
+
+    VoucherSelectionItem:
+      type: object
+      properties:
+        action:
+          $ref: "#/components/schemas/LedgerAction"
+        voucher_id:
+          type: string
+          format: uuid
+        voucher_line_item_id:
+          type: string
+          format: uuid
+      required:
+        - action
+        - voucher_id
+        - voucher_line_item_id
+
+    VoucherSelectionResponse:
+      type: object
+      properties:
+        result:
+          type: object
+          properties:
+            added_count:
+              type: integer
+              format: int32
+            removed_count:
+              type: integer
+              format: int32
+            session_id:
+              type: string
+              format: uuid
+
+    SalesLedgerDraftUpdateRequest:
+      type: object
+      properties:
+        sales_ledger_draft:
+          type: object
+          properties:
+            details:
+              type: array
+              items:
+                $ref: "#/components/schemas/SalesDraftDetailSimpleUpdateRequest"
+            session_id:
+              type: string
+              format: uuid
+          required:
+            - session_id
+
+    SalesDraftDetailSimpleUpdateRequest:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        action:
+          $ref: "#/components/schemas/LedgerAction"
+        invoice_number:
+          type: string
+          maxLength: 20
+        invoice_date:
+          $ref: "#/components/schemas/Instant"
+        customer_name:
+          type: string
+          maxLength: 255
+        customer_tax_code:
+          type: string
+          maxLength: 50
+        turnover_amount:
+          $ref: "#/components/schemas/BigDecimal"
+        vat_amount:
+          $ref: "#/components/schemas/BigDecimal"
+        note:
+          type: string
+          maxLength: 255
+        group_code:
+          $ref: "#/components/schemas/GroupCode"
+        sort_order:
+          type: integer
+          format: int32
+
+    PurchaseLedgerDraftUpdateRequest:
+      type: object
+      properties:
+        purchase_ledger_draft:
+          type: object
+          properties:
+            details:
+              type: array
+              items:
+                $ref: "#/components/schemas/PurchaseDraftDetailSimpleUpdateRequest"
+            session_id:
+              type: string
+              format: uuid
+          required:
+            - session_id
+
+    PurchaseDraftDetailSimpleUpdateRequest:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        action:
+          $ref: "#/components/schemas/LedgerAction"
+        invoice_number:
+          type: string
+          maxLength: 20
+        invoice_date:
+          $ref: "#/components/schemas/Instant"
+        supplier_name:
+          type: string
+          maxLength: 255
+        supplier_tax_code:
+          type: string
+          maxLength: 50
+        turnover_amount:
+          $ref: "#/components/schemas/BigDecimal"
+        vat_amount:
+          $ref: "#/components/schemas/BigDecimal"
+        note:
+          type: string
+          maxLength: 255
+        purchase_purpose_code:
+          type: string
+        sort_order:
+          type: integer
+          format: int32
+
+    SalesLedgerDeclarationUpdateRequest:
+      type: object
+      properties:
+        sales_ledger:
+          type: object
+          properties:
+            details:
+              type: array
+              items:
+                $ref: "#/components/schemas/SalesDeclarationDetailUpdateRequest"
+            session_id:
+              type: string
+              format: uuid
+          required:
+            - session_id
+
+    SalesDeclarationDetailUpdateRequest:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        action:
+          $ref: "#/components/schemas/LedgerAction"
+        invoice_number:
+          type: string
+          maxLength: 20
+        invoice_date:
+          $ref: "#/components/schemas/Instant"
+        customer_name:
+          type: string
+          maxLength: 255
+        customer_tax_code:
+          type: string
+          maxLength: 50
+        turnover_amount:
+          $ref: "#/components/schemas/BigDecimal"
+        vat_amount:
+          $ref: "#/components/schemas/BigDecimal"
+        note:
+          type: string
+          maxLength: 255
+        group_code:
+          $ref: "#/components/schemas/GroupCode"
+        sort_order:
+          type: integer
+          format: int32
+
+    PurchaseLedgerDeclarationUpdateRequest:
+      type: object
+      properties:
+        purchase_ledger:
+          type: object
+          properties:
+            details:
+              type: array
+              items:
+                $ref: "#/components/schemas/PurchaseDeclarationDetailUpdateRequest"
+            session_id:
+              type: string
+              format: uuid
+          required:
+            - session_id
+
+    PurchaseDeclarationDetailUpdateRequest:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        action:
+          $ref: "#/components/schemas/LedgerAction"
+        invoice_number:
+          type: string
+          maxLength: 20
+        invoice_date:
+          $ref: "#/components/schemas/Instant"
+        supplier_name:
+          type: string
+          maxLength: 255
+        supplier_tax_code:
+          type: string
+          maxLength: 50
+        turnover_amount:
+          $ref: "#/components/schemas/BigDecimal"
+        vat_amount:
+          $ref: "#/components/schemas/BigDecimal"
+        note:
+          type: string
+          maxLength: 255
+        purchase_purpose_code:
+          type: string
+        sort_order:
+          type: integer
+          format: int32
+
+    DeclarationRegistrationListRequest:
+      type: object
+      properties:
+        declaration_registrations:
+          type: array
+          items:
+            $ref: "#/components/schemas/DeclarationRegistrationRequest"
+
+    DeclarationRegistrationRequest:
+      type: object
+      properties:
+        declaration_code:
+          $ref: "#/components/schemas/DeclarationCode"
+        declaration_period:
+          $ref: "#/components/schemas/DeclarationPeriod"
+        is_active:
+          type: boolean
+
+    TaxAuthoritySettingsRequest:
+      type: object
+      properties:
+        tax_authority_settings:
+          type: object
+          properties:
+            province_code:
+              type: string
+            province_name:
+              type: string
+            ward_code:
+              type: string
+            ward_name:
+              type: string
+            tax_office_code:
+              type: string
+            tax_office_name:
+              type: string
+            tax_authority_code:
+              type: string
+            tax_authority_name:
+              type: string
+            tax_agent_tax_code:
+              type: string
+            tax_agent_name:
+              type: string
+            tax_agent_address:
+              type: string
+            tax_agent_province_code:
+              type: string
+            tax_agent_province_name:
+              type: string
+            tax_agent_ward_code:
+              type: string
+            tax_agent_ward_name:
+              type: string
+            tax_agent_telephone:
+              type: string
+            tax_agent_email:
+              type: string
+            contract_code:
+              type: string
+            contract_date:
+              $ref: "#/components/schemas/Instant"
+            tax_agent_employee_name:
+              type: string
+            tax_agent_certificate_no:
+              type: string
+            service_provider_certificate_no:
+              type: string
+            service_provider_name:
+              type: string
+
+    # ============================================
+    # Response Schemas
+    # ============================================
+    TaxDeclarationResponse:
+      type: object
+      properties:
+        tax_declaration:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            declaration_name:
+              type: string
+            type:
+              $ref: "#/components/schemas/TaxDeclarationForm"
+            status:
+              $ref: "#/components/schemas/DeclarationStatus"
+            supplementary_times:
+              type: integer
+              format: int32
+            tax_agent_full_name:
+              type: string
+            tax_agent_certificate_number:
+              type: string
+            signer_name:
+              type: string
+            signed_date:
+              $ref: "#/components/schemas/Instant"
+            created_by:
+              type: string
+            created_at:
+              $ref: "#/components/schemas/Instant"
+            updated_by:
+              type: string
+            updated_at:
+              $ref: "#/components/schemas/Instant"
+            details:
+              type: array
+              items:
+                $ref: "#/components/schemas/TaxDeclarationDetailDto"
+
+    TaxDeclarationListItemResponse:
+      type: object
+      properties:
+        tax_declaration:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            declaration_name:
+              type: string
+            type:
+              $ref: "#/components/schemas/TaxDeclarationForm"
+            status:
+              $ref: "#/components/schemas/DeclarationStatus"
+            supplementary_times:
+              type: integer
+              format: int32
+            declaration_period:
+              type: string
+            period_type:
+              $ref: "#/components/schemas/PeriodType"
+            period:
+              type: integer
+              format: int32
+            year:
+              type: integer
+              format: int32
+            declaration_type:
+              $ref: "#/components/schemas/DeclarationType"
+            supplementary_no:
+              type: integer
+              format: int64
+            supplementary_date:
+              $ref: "#/components/schemas/Instant"
+            tax_agent_full_name:
+              type: string
+            tax_agent_certificate_number:
+              type: string
+            signer_name:
+              type: string
+            signed_date:
+              $ref: "#/components/schemas/Instant"
+            created_by:
+              type: string
+            created_at:
+              $ref: "#/components/schemas/Instant"
+            updated_by:
+              type: string
+            updated_at:
+              $ref: "#/components/schemas/Instant"
+
+    TaxDeclarationDetailDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        item_code:
+          type: string
+        item_name:
+          type: string
+        data_type:
+          $ref: "#/components/schemas/DataType"
+        value:
+          type: string
+        display_order:
+          type: integer
+          format: int32
+
+    PendingDeclarationListResponse:
+      type: object
+      properties:
+        pending_declarations:
+          type: array
+          items:
+            $ref: "#/components/schemas/PendingDeclarationResponse"
+
+    PendingDeclarationResponse:
+      type: object
+      properties:
+        declaration_code:
+          type: string
+        declaration_name:
+          type: string
+        period:
+          type: string
+        period_display:
+          type: string
+
+    SalesLedgerInformation:
+      type: object
+      properties:
+        bkbr01_1:
+          type: object
+          properties:
+            details:
+              type: array
+              items:
+                $ref: "#/components/schemas/SalesDraftLedgerDetailDto"
+            total_rows:
+              type: integer
+              format: int32
+            page:
+              type: integer
+              format: int32
+            summaries:
+              type: array
+              items:
+                $ref: "#/components/schemas/VatGroupSummary"
+            session_id:
+              type: string
+              format: uuid
+
+    PurchaseLedgerInformation:
+      type: object
+      properties:
+        bkbr01_2:
+          type: object
+          properties:
+            details:
+              type: array
+              items:
+                $ref: "#/components/schemas/PurchaseDraftLedgerDetailDto"
+            total_rows:
+              type: integer
+              format: int32
+            page:
+              type: integer
+              format: int32
+            summaries:
+              type: array
+              items:
+                $ref: "#/components/schemas/VatGroupSummary"
+            session_id:
+              type: string
+              format: uuid
+
+    Pl142Information:
+      type: object
+      properties:
+        pl142:
+          type: object
+          properties:
+            purchase_items:
+              type: array
+              items:
+                $ref: "#/components/schemas/Pl142ItemDto"
+            sales_items:
+              type: array
+              items:
+                $ref: "#/components/schemas/Pl142ItemDto"
+            purchase_total_turnover:
+              $ref: "#/components/schemas/BigDecimal"
+            purchase_total_vat:
+              $ref: "#/components/schemas/BigDecimal"
+            sales_total_turnover:
+              $ref: "#/components/schemas/BigDecimal"
+            sales_total_reduction_vat:
+              $ref: "#/components/schemas/BigDecimal"
+            diff_amount:
+              $ref: "#/components/schemas/BigDecimal"
+            session_id:
+              type: string
+              format: uuid
+
+    Pl142ItemDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        item_name:
+          type: string
+        unit_name:
+          type: string
+        quantity:
+          $ref: "#/components/schemas/BigDecimal"
+        turnover_amount:
+          $ref: "#/components/schemas/BigDecimal"
+        vat_amount:
+          $ref: "#/components/schemas/BigDecimal"
+        reduction_vat_amount:
+          $ref: "#/components/schemas/BigDecimal"
+        tax_rate:
+          $ref: "#/components/schemas/BigDecimal"
+        table_list_type:
+          $ref: "#/components/schemas/TableListType"
+
+    SalesLedgerDraftUpdateResponse:
+      type: object
+      properties:
+        result:
+          type: object
+          properties:
+            added_count:
+              type: integer
+              format: int32
+            updated_count:
+              type: integer
+              format: int32
+            removed_count:
+              type: integer
+              format: int32
+            session_id:
+              type: string
+              format: uuid
+
+    PurchaseLedgerDraftUpdateResponse:
+      type: object
+      properties:
+        result:
+          type: object
+          properties:
+            added_count:
+              type: integer
+              format: int32
+            updated_count:
+              type: integer
+              format: int32
+            removed_count:
+              type: integer
+              format: int32
+            session_id:
+              type: string
+              format: uuid
+
+    DeclarationAppendixUpdateResponse:
+      type: object
+      properties:
+        result:
+          type: object
+          properties:
+            added_count:
+              type: integer
+              format: int32
+            updated_count:
+              type: integer
+              format: int32
+            removed_count:
+              type: integer
+              format: int32
+            declaration_id:
+              type: string
+              format: uuid
+
+    SalesVoucherInformationResponse:
+      type: object
+      properties:
+        sales_voucher:
+          type: object
+          properties:
+            details:
+              type: array
+              items:
+                $ref: "#/components/schemas/SalesLedgerDetailDto"
+            page:
+              type: integer
+              format: int32
+            summaries:
+              $ref: "#/components/schemas/VatGroupSummary"
+            group_summaries:
+              type: array
+              items:
+                $ref: "#/components/schemas/VatGroupSummary"
+            session_id:
+              type: string
+              format: uuid
+
+    PurchaseVoucherInformationResponse:
+      type: object
+      properties:
+        purchase_voucher:
+          type: object
+          properties:
+            details:
+              type: array
+              items:
+                $ref: "#/components/schemas/PurchaseLedgerDetailDto"
+            page:
+              type: integer
+              format: int32
+            summaries:
+              $ref: "#/components/schemas/VatGroupSummary"
+            group_summaries:
+              type: array
+              items:
+                $ref: "#/components/schemas/VatGroupSummary"
+            session_id:
+              type: string
+              format: uuid
+
+    LedgerValidationResponse:
+      type: object
+      properties:
+        tax_declaration_validation:
+          type: object
+          properties:
+            message:
+              type: string
+            valid:
+              type: boolean
+            id:
+              type: string
+              format: uuid
+            voucher_line_item_id:
+              type: string
+              format: uuid
+            session_id:
+              type: string
+              format: uuid
+            group_code:
+              type: string
+            purchase_purpose_code:
+              type: string
+            invalid_field:
+              $ref: "#/components/schemas/FieldNameRequired"
+            page_number:
+              type: integer
+              format: int64
+
+    InventoryItemResponse:
+      type: object
+      properties:
+        pl142_invoice:
+          type: object
+          properties:
+            items:
+              type: array
+              items:
+                $ref: "#/components/schemas/VatEightPercentInventoryItemResponse"
+            total_rows:
+              type: integer
+              format: int64
+            total_turnover_amount:
+              $ref: "#/components/schemas/BigDecimal"
+            total_vat_amount:
+              $ref: "#/components/schemas/BigDecimal"
+            total_deduction_tax_amount:
+              $ref: "#/components/schemas/BigDecimal"
+
+    VatEightPercentInventoryItemResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        product_id:
+          type: string
+          format: uuid
+        product_name:
+          type: string
+        unit_name:
+          type: string
+        quantity:
+          $ref: "#/components/schemas/BigDecimal"
+        turnover_amount:
+          $ref: "#/components/schemas/BigDecimal"
+        vat_amount:
+          $ref: "#/components/schemas/BigDecimal"
+        deduction_tax_amount:
+          $ref: "#/components/schemas/BigDecimal"
+
+    NonTaxableSalePagingResponse:
+      type: object
+      properties:
+        non_taxable_goods:
+          type: object
+          properties:
+            details:
+              type: array
+              items:
+                $ref: "#/components/schemas/NonTaxableSaleVoucherDto"
+            total_rows:
+              type: integer
+              format: int32
+            total_turnover_amount:
+              $ref: "#/components/schemas/BigDecimal"
+
+    NonTaxableSaleVoucherDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        voucher_id:
+          type: string
+          format: uuid
+        voucher_line_item_id:
+          type: string
+          format: uuid
+        product_id:
+          type: string
+          format: uuid
+        product_name:
+          type: string
+        turnover_amount:
+          $ref: "#/components/schemas/BigDecimal"
+
+    GenerateSessionEditResponse:
+      type: object
+      properties:
+        tax_declaration:
+          type: object
+          properties:
+            session_id:
+              type: string
+              format: uuid
+
+    LedgerDetailResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        invoice_number:
+          type: string
+        invoice_date:
+          $ref: "#/components/schemas/Instant"
+        partner_name:
+          type: string
+        partner_tax_code:
+          type: string
+        turnover_amount:
+          $ref: "#/components/schemas/BigDecimal"
+        vat_amount:
+          $ref: "#/components/schemas/BigDecimal"
+        note:
+          type: string
+        group_code:
+          type: string
+        sort_order:
+          type: integer
+          format: int32
+
+    DeclarationRegistrationResponse:
+      type: object
+      properties:
+        declaration_registration:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            declaration_code:
+              $ref: "#/components/schemas/DeclarationCode"
+            declaration_name:
+              type: string
+            declaration_period:
+              $ref: "#/components/schemas/DeclarationPeriod"
+            is_active:
+              type: boolean
+
+    TaxTemplateResponse:
+      type: object
+      properties:
+        tax_declaration_template:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            ref_type:
+              type: integer
+              format: int32
+            form_code:
+              type: string
+            form_name:
+              type: string
+            circular:
+              type: string
+            effective_date:
+              type: string
+            expiration_date:
+              type: string
+            fields:
+              type: array
+              items:
+                $ref: "#/components/schemas/TaxTemplateFieldDto"
+            attributes:
+              type: object
+              additionalProperties: true
+
+    TaxTemplateFieldDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        ref_type:
+          type: integer
+          format: int32
+        sort_order:
+          type: integer
+          format: int32
+        sort_order_display:
+          type: string
+        item_name:
+          type: string
+        sale_code_display:
+          type: string
+        vat_code_display:
+          type: string
+        column_style:
+          type: string
+        formula:
+          type: string
+        data_type:
+          $ref: "#/components/schemas/DataType"
+        created_at:
+          type: string
+        updated_at:
+          type: string
+
+    TaxAuthoritySettingsResponse:
+      type: object
+      properties:
+        tax_authority_settings:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            province_code:
+              type: string
+            province_name:
+              type: string
+            ward_code:
+              type: string
+            ward_name:
+              type: string
+            tax_office_code:
+              type: string
+            tax_office_name:
+              type: string
+            tax_authority_code:
+              type: string
+            tax_authority_name:
+              type: string
+            tax_agent_tax_code:
+              type: string
+            tax_agent_name:
+              type: string
+            tax_agent_address:
+              type: string
+            tax_agent_province_code:
+              type: string
+            tax_agent_province_name:
+              type: string
+            tax_agent_ward_code:
+              type: string
+            tax_agent_ward_name:
+              type: string
+            tax_agent_telephone:
+              type: string
+            tax_agent_email:
+              type: string
+            contract_code:
+              type: string
+            contract_date:
+              $ref: "#/components/schemas/Instant"
+            tax_agent_employee_name:
+              type: string
+            tax_agent_certificate_no:
+              type: string
+            service_provider_certificate_no:
+              type: string
+            service_provider_name:
+              type: string
+            created_at:
+              $ref: "#/components/schemas/Instant"
+            updated_at:
+              $ref: "#/components/schemas/Instant"
+
+    # ============================================
+    # Supporting Schemas
+    # ============================================
+    SalesDraftLedgerDetailDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        voucher_id:
+          type: string
+          format: uuid
+        voucher_line_item_id:
+          type: string
+          format: uuid
+        invoice_number:
+          type: string
+          maxLength: 20
+        invoice_date:
+          $ref: "#/components/schemas/Instant"
+        customer_name:
+          type: string
+          maxLength: 255
+        customer_tax_code:
+          type: string
+          maxLength: 50
+        turnover_amount:
+          $ref: "#/components/schemas/BigDecimal"
+        vat_amount:
+          $ref: "#/components/schemas/BigDecimal"
+        note:
+          type: string
+          maxLength: 255
+        group_code:
+          type: string
+        sort_order:
+          type: integer
+          format: int32
+        voucher_ref_type:
+          type: integer
+          format: int32
+        voucher_ref_date:
+          $ref: "#/components/schemas/Instant"
+
+    PurchaseDraftLedgerDetailDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        voucher_id:
+          type: string
+          format: uuid
+        voucher_line_item_id:
+          type: string
+          format: uuid
+        invoice_number:
+          type: string
+          maxLength: 20
+        invoice_date:
+          $ref: "#/components/schemas/Instant"
+        supplier_name:
+          type: string
+          maxLength: 255
+        supplier_tax_code:
+          type: string
+          maxLength: 50
+        turnover_amount:
+          $ref: "#/components/schemas/BigDecimal"
+        vat_amount:
+          $ref: "#/components/schemas/BigDecimal"
+        note:
+          type: string
+          maxLength: 255
+        purchase_purpose_code:
+          type: string
+        sort_order:
+          type: integer
+          format: int32
+        voucher_ref_type:
+          type: integer
+          format: int32
+        voucher_ref_date:
+          $ref: "#/components/schemas/Instant"
+
+    SalesLedgerDetailDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        voucher_id:
+          type: string
+          format: uuid
+        voucher_line_item_id:
+          type: string
+          format: uuid
+        invoice_number:
+          type: string
+        invoice_date:
+          $ref: "#/components/schemas/Instant"
+        customer_name:
+          type: string
+        customer_tax_code:
+          type: string
+        turnover_amount:
+          $ref: "#/components/schemas/BigDecimal"
+        vat_amount:
+          $ref: "#/components/schemas/BigDecimal"
+        note:
+          type: string
+        group_code:
+          type: string
+        sort_order:
+          type: integer
+          format: int32
+        voucher_ref_no:
+          type: string
+        voucher_ref_type:
+          type: integer
+          format: int32
+        voucher_ref_date:
+          $ref: "#/components/schemas/Instant"
+        voucher_journal_memo:
+          type: string
+
+    PurchaseLedgerDetailDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        voucher_id:
+          type: string
+          format: uuid
+        voucher_line_item_id:
+          type: string
+          format: uuid
+        invoice_number:
+          type: string
+        invoice_date:
+          $ref: "#/components/schemas/Instant"
+        supplier_name:
+          type: string
+        supplier_tax_code:
+          type: string
+        turnover_amount:
+          $ref: "#/components/schemas/BigDecimal"
+        vat_amount:
+          $ref: "#/components/schemas/BigDecimal"
+        note:
+          type: string
+        purchase_purpose_code:
+          type: string
+        sort_order:
+          type: integer
+          format: int32
+        voucher_ref_no:
+          type: string
+        voucher_ref_type:
+          type: integer
+          format: int32
+        voucher_ref_date:
+          $ref: "#/components/schemas/Instant"
+        voucher_journal_memo:
+          type: string
+
+    VatGroupSummary:
+      type: object
+      properties:
+        group_code:
+          type: string
+        group_name:
+          type: string
+        total_turnover_amount:
+          $ref: "#/components/schemas/BigDecimal"
+        total_vat_amount:
+          $ref: "#/components/schemas/BigDecimal"
+        count:
+          type: integer
+          format: int32

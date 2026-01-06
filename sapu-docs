@@ -1,0 +1,10 @@
+<script>start("d:\\Project\\bk\\sapo-accounting-services\\apps\\individual\\sapu-docs\\");</script>
+<script>onHasParentDirectory();</script>
+<script>addRow("index.html","index.html",0,3952,"3.9 kB",1759892746,"10/8/25, 10:05:46 AM");</script>
+<script>addRow("purchase_invoice.openapi.yaml","purchase_invoice.openapi.yaml",0,19353,"18.9 kB",1759866838,"10/8/25, 2:53:58 AM");</script>
+<script>addRow("purchase_return.openapi.yaml","purchase_return.openapi.yaml",0,23360,"22.8 kB",1759866838,"10/8/25, 2:53:58 AM");</script>
+<script>addRow("purchase_voucher.openapi.yaml","purchase_voucher.openapi.yaml",0,34682,"33.9 kB",1759866838,"10/8/25, 2:53:58 AM");</script>
+<script>addRow("quick_deploy.md","quick_deploy.md",0,3188,"3.1 kB",1759866838,"10/8/25, 2:53:58 AM");</script>
+<script>addRow("readme.md","readme.md",0,5163,"5.0 kB",1759866838,"10/8/25, 2:53:58 AM");</script>
+<script>addRow("sales_voucher.openapi.yaml","sales_voucher.openapi.yaml",0,39386,"38.5 kB",1759866838,"10/8/25, 2:53:58 AM");</script>
+<script>addRow("tax_declaration.openapi.yaml","tax_declaration.openapi.yaml",0,31041,"30.3 kB",1759893050,"10/8/25, 10:10:50 AM");</script>

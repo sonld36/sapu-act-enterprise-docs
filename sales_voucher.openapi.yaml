@@ -1,0 +1,1528 @@
+openapi: "3.0.3"
+info:
+  title: "sapo_accounting_services Sales Voucher API"
+  description: "Sales Voucher endpoints"
+  version: "1.0.0"
+servers:
+  - url: "https://sapo_accounting_services"
+paths:
+  /admin/sales_vouchers:
+    post:
+      summary: "POST admin/sales_vouchers"
+      operationId: "createSalesVoucher"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SalesVoucherCreateRequest"
+        required: true
+      responses:
+        "200":
+          description: "OK"
+          content:
+            "*/*":
+              schema:
+                $ref: "#/components/schemas/SaleVoucherResponse"
+    get:
+      summary: "GET admin/sales_vouchers"
+      operationId: "searchSalesVouchers"
+      parameters:
+        - in: query
+          name: sort
+          schema:
+            type: string
+            description: a comma delimited list of sort fields:sort order
+            example: "ref_date:desc,created_at:asc"
+        - in: query
+          name: page
+          schema:
+            type: integer
+            format: int32
+        - in: query
+          name: size
+          schema:
+            type: integer
+            format: int32
+        - in: query
+          name: posted_types
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [posted, unposted]
+        - in: query
+          name: payment_statuses
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [unpaid, partial_paid, paid]
+        - in: query
+          name: invoice_creation_statuses
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [created, not_created]
+        - in: query
+          name: invoice_issuance_statuses
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [not_issued, issued, none]
+        - in: query
+          name: ref_date_from
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: ref_date_to
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: posted_date_from
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: posted_date_to
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: ref_no_finance
+          schema:
+            type: string
+        - in: query
+          name: inv_no
+          schema:
+            type: string
+        - in: query
+          name: query
+          schema:
+            type: string
+        - in: query
+          name: invoice_types
+          schema:
+            type: array
+            items:
+              type: string
+              enum:
+                [created_with_invoice, created_without_invoice, invoice_created]
+      responses:
+        200:
+          description: OK
+          headers:
+            X-Total-Count:
+              schema:
+                type: integer
+              description: Total number of records matched
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SalesInformationResponse"
+
+  /admin/sales_vouchers/{id}:
+    get:
+      summary: "GET admin/sales_vouchers/{id}"
+      operationId: "getSalesVoucherById"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: "OK"
+          content:
+            "*/*":
+              schema:
+                $ref: "#/components/schemas/SalesVoucherDocumentResponse"
+    put:
+      summary: "PUT admin/sales_vouchers/{id}"
+      operationId: "updateSalesVoucher"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SalesVoucherUpdateRequest"
+        required: true
+      responses:
+        "200":
+          description: "OK"
+          content:
+            "*/*":
+              schema:
+                $ref: "#/components/schemas/SaleVoucherResponse"
+    delete:
+      summary: "DELETE admin/sales_vouchers/{id}"
+      operationId: "deleteSalesVoucher"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: "OK"
+
+  /admin/sales_vouchers/{id}/details:
+    get:
+      summary: "GET admin/sales_vouchers/{id}/details"
+      operationId: "getSalesDetails"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SalesLineItemResponse"
+
+  /admin/sales_vouchers/aggregations:
+    get:
+      summary: "GET admin/sales_vouchers/aggregations"
+      operationId: "getSalesAggregations"
+      parameters:
+        - in: query
+          name: posted_types
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [posted, unposted]
+        - in: query
+          name: payment_statuses
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [unpaid, partial_paid, paid]
+        - in: query
+          name: invoice_creation_statuses
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [created, not_created]
+        - in: query
+          name: invoice_issuance_statuses
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [not_issued, issued, none]
+        - in: query
+          name: ref_date_from
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: ref_date_to
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: posted_date_from
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: posted_date_to
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: ref_no_finance
+          schema:
+            type: string
+        - in: query
+          name: inv_no
+          schema:
+            type: string
+        - in: query
+          name: query
+          schema:
+            type: string
+        - in: query
+          name: invoice_types
+          schema:
+            type: array
+            items:
+              type: string
+              enum:
+                [created_with_invoice, created_without_invoice, invoice_created]
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SaVoucherAggregationResponse"
+
+  /admin/sales_vouchers/{id}/pagination:
+    get:
+      summary: "GET admin/sales_vouchers/{id}/pagination"
+      operationId: "getSalesVoucherPagination"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: "OK"
+          content:
+            "*/*":
+              schema:
+                $ref: "#/components/schemas/SalesVoucherDetailPaginationResponse"
+
+  /admin/sales_vouchers/{id}/post:
+    post:
+      summary: "POST admin/sales_vouchers/{id}/post"
+      operationId: "postSalesDocument"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: "OK"
+
+  /admin/sales_vouchers/{id}/unpost:
+    post:
+      summary: "POST admin/sales_vouchers/{id}/unpost"
+      operationId: "unpostSalesDocument"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: "OK"
+
+  /admin/sales_vouchers/bulk:
+    post:
+      summary: "POST admin/sales_vouchers/bulk"
+      operationId: "bulkActionSalesDocuments"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SalesVoucherBulkRequest"
+        required: true
+      responses:
+        "200":
+          description: "OK"
+          content:
+            "*/*":
+              schema:
+                $ref: "#/components/schemas/JobResponse"
+
+  /admin/sales_vouchers/partner/{partnerId}/unpaid_vouchers:
+    get:
+      summary: "GET admin/sales_vouchers/partner/{partnerId}/unpaid_vouchers"
+      operationId: "getUnpaidVouchersByPartnerId"
+      parameters:
+        - name: partnerId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: ref_no_finance
+          schema:
+            type: string
+          description: Filter by finance reference number
+        - in: query
+          name: journal_memo
+          schema:
+            type: string
+          description: Filter by journal memo
+        - in: query
+          name: page
+          schema:
+            type: integer
+            format: int32
+        - in: query
+          name: size
+          schema:
+            type: integer
+            format: int32
+        - in: query
+          name: sort
+          schema:
+            type: string
+            description: a comma delimited list of sort fields:sort order
+            example: "ref_date:desc,created_at:asc"
+      responses:
+        200:
+          description: OK
+          headers:
+            X-Total-Count:
+              schema:
+                type: integer
+              description: Total number of records matched
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SaInvoiceReceivablePartnerInfoResponse"
+
+  /admin/sales_vouchers/{id}/link_invoice:
+    post:
+      summary: "POST admin/sales_vouchers/{id}/link_invoice"
+      operationId: "linkInvoiceToSalesVoucher"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LinkInvoiceRequest"
+        required: true
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SalesInformationResponse"
+
+components:
+  schemas:
+    BigDecimal:
+      type: object
+      properties: {}
+    Instant:
+      type: object
+      properties: {}
+
+    SalesVoucherCreateRequest:
+      type: object
+      properties:
+        document:
+          type: object
+          properties:
+            invoice:
+              $ref: "#/components/schemas/SaInvoiceInformationRequestModel"
+            sa_voucher:
+              $ref: "#/components/schemas/SalesInformationRequest"
+            line_items:
+              type: array
+              items:
+                $ref: "#/components/schemas/SaVoucherLineItemRequest"
+            in_outward:
+              $ref: "#/components/schemas/InOutwardInformationModel"
+            ba_deposit:
+              $ref: "#/components/schemas/BaDepositInformationModel"
+            ca_receipt:
+              $ref: "#/components/schemas/CaReceiptInformationModel"
+
+    SalesInformationRequest:
+      type: object
+      properties:
+        ref_no_finance:
+          type: string
+          maxLength: 20
+        invoice_type:
+          type: string
+          enum: [created_with_invoice, created_without_invoice, invoice_created]
+        invoice_creation_status:
+          type: string
+          enum: [created, not_created]
+        invoice_issuance_status:
+          type: string
+          enum: [not_issued, issued, none]
+        payment_type:
+          type: string
+          enum: [cash, bank, unpaid]
+        is_outward_export:
+          type: boolean
+        customer_id:
+          type: string
+          format: uuid
+        customer_code:
+          type: string
+          maxLength: 20
+        customer_name:
+          type: string
+          maxLength: 255
+        customer_address:
+          type: string
+          maxLength: 255
+        customer_contact_name:
+          type: string
+          maxLength: 255
+        customer_tax_code:
+          type: string
+        journal_memo:
+          type: string
+          maxLength: 255
+        posted_date:
+          $ref: "#/components/schemas/Instant"
+        ref_date:
+          $ref: "#/components/schemas/Instant"
+        employee_id:
+          type: string
+          format: uuid
+        discount_type:
+          type: string
+          enum: [none, percent, amount]
+        is_account_enabled:
+          type: boolean
+          default: false
+        invoice_lookup_code:
+          type: string
+          maxLength: 255
+        invoice_lookup_url:
+          type: string
+          maxLength: 255
+        document_attachment_url:
+          type: string
+        external_source:
+          type: string
+          maxLength: 100
+        external_refno:
+          type: string
+          maxLength: 100
+
+    SaVoucherLineItemRequest:
+      type: object
+      properties:
+        product_id:
+          type: string
+          format: uuid
+        product_code:
+          type: string
+          maxLength: 50
+        product_name:
+          type: string
+          maxLength: 500
+        product_type:
+          type: string
+          enum: [product, service, combo]
+        warehouse_id:
+          type: string
+          format: uuid
+        variant_id:
+          type: string
+          format: uuid
+        unit_id:
+          type: string
+          format: uuid
+        vat_rate_id:
+          type: string
+          format: uuid
+        vat_rate_value:
+          $ref: "#/components/schemas/BigDecimal"
+        cost_price:
+          $ref: "#/components/schemas/BigDecimal"
+        cost_item_id:
+          type: string
+          format: uuid
+        quantity:
+          $ref: "#/components/schemas/BigDecimal"
+        unit_price:
+          $ref: "#/components/schemas/BigDecimal"
+        discount_rate:
+          $ref: "#/components/schemas/BigDecimal"
+        discount_amount:
+          $ref: "#/components/schemas/BigDecimal"
+        debit_account:
+          type: string
+          maxLength: 20
+        credit_account:
+          type: string
+          maxLength: 20
+        discount_account:
+          type: string
+          maxLength: 20
+        vat_account:
+          type: string
+          maxLength: 20
+        vat_description:
+          type: string
+          maxLength: 255
+        description:
+          type: string
+          maxLength: 255
+        cost_price_account_number:
+          type: string
+          maxLength: 20
+        inventory_account_number:
+          type: string
+          maxLength: 20
+
+    SaInvoiceInformationRequestModel:
+      type: object
+      properties:
+        invoice_template_no:
+          type: string
+          maxLength: 20
+        invoice_series:
+          type: string
+          maxLength: 20
+        invoice_number:
+          type: string
+          maxLength: 20
+        journal_memo:
+          type: string
+          maxLength: 255
+        employee_id:
+          type: string
+          format: uuid
+        invoice_date:
+          $ref: "#/components/schemas/Instant"
+        discount_type:
+          type: string
+          enum: [none, percent, amount]
+        is_include_invoice:
+          type: boolean
+        payment_method:
+          type: string
+          enum: [cash, bank, caba]
+        currency_code:
+          type: string
+          maxLength: 10
+        exchange_rate:
+          $ref: "#/components/schemas/BigDecimal"
+        customer_id:
+          type: string
+          format: uuid
+        customer_address:
+          type: string
+          maxLength: 255
+        customer_phone_number:
+          type: string
+          maxLength: 50
+        customer_email:
+          type: string
+          maxLength: 255
+        customer_contact_name:
+          type: string
+          maxLength: 255
+        customer_budget_unit_code:
+          type: string
+          maxLength: 50
+        customer_id_number:
+          type: string
+          maxLength: 12
+        customer_bank_account:
+          type: string
+          maxLength: 50
+        customer_bank_name:
+          type: string
+          maxLength: 255
+        bank_account_id:
+          type: string
+          format: uuid
+        ref_type:
+          type: integer
+          format: int32
+
+    InOutwardInformationModel:
+      type: object
+      properties:
+        ref_no_finance:
+          type: string
+          maxLength: 20
+        ref_date:
+          $ref: "#/components/schemas/Instant"
+        posted_date:
+          $ref: "#/components/schemas/Instant"
+        journal_memo:
+          type: string
+          maxLength: 255
+        customer_address:
+          type: string
+        customer_contact_name:
+          type: string
+
+    BaDepositInformationModel:
+      type: object
+      properties:
+        ref_no_finance:
+          type: string
+          maxLength: 20
+        ref_date:
+          $ref: "#/components/schemas/Instant"
+        posted_date:
+          $ref: "#/components/schemas/Instant"
+        journal_memo:
+          type: string
+          maxLength: 255
+        customer_address:
+          type: string
+        customer_contact_name:
+          type: string
+        bank_name:
+          type: string
+        customer_bank_account_id:
+          type: string
+          format: uuid
+        bank_account_id:
+          type: string
+          format: uuid
+
+    CaReceiptInformationModel:
+      type: object
+      properties:
+        ref_no_finance:
+          type: string
+          maxLength: 20
+        ref_date:
+          $ref: "#/components/schemas/Instant"
+        posted_date:
+          $ref: "#/components/schemas/Instant"
+        journal_memo:
+          type: string
+          maxLength: 255
+        partner_address:
+          type: string
+        partner_contact_name:
+          type: string
+
+    SalesVoucherUpdateRequest:
+      type: object
+      properties:
+        document:
+          type: object
+          properties:
+            invoice_id:
+              type: string
+              format: uuid
+            customer_id:
+              type: string
+              format: uuid
+            employee_id:
+              type: string
+              format: uuid
+            customer_code:
+              type: string
+            customer_name:
+              type: string
+            customer_address:
+              type: string
+            customer_contact_name:
+              type: string
+            ref_type:
+              type: integer
+              format: int32
+            ref_date:
+              $ref: "#/components/schemas/Instant"
+            posted_date:
+              $ref: "#/components/schemas/Instant"
+            ref_no_finance:
+              type: string
+            invoice_number:
+              type: string
+            is_posted_finance:
+              type: boolean
+            invoice_creation_status:
+              type: string
+              enum: [created, not_created]
+            invoice_issuance_status:
+              type: string
+              enum: [not_issued, issued, none]
+            invoice_type:
+              type: string
+              enum:
+                [created_with_invoice, created_without_invoice, invoice_created]
+            payment_status:
+              type: string
+              enum: [unpaid, partial_paid, paid]
+            payment_type:
+              type: string
+              enum: [cash, bank, unpaid]
+            is_outward_export:
+              type: boolean
+            reduce_vat_by_20_percent:
+              type: boolean
+            discount_type:
+              type: string
+              enum: [none, percent, amount]
+            total_amount:
+              $ref: "#/components/schemas/BigDecimal"
+            receivable_amount:
+              $ref: "#/components/schemas/BigDecimal"
+            discount_amount:
+              $ref: "#/components/schemas/BigDecimal"
+            total_deduction_tax_amount:
+              $ref: "#/components/schemas/BigDecimal"
+            subtotal_amount:
+              $ref: "#/components/schemas/BigDecimal"
+            journal_memo:
+              type: string
+            invoice_lookup_code:
+              type: string
+            invoice_lookup_url:
+              type: string
+            attachment_url:
+              type: string
+            external_source:
+              type: string
+              maxLength: 100
+            external_refno:
+              type: string
+              maxLength: 100
+            line_items:
+              type: array
+              items:
+                $ref: "#/components/schemas/SalesLineItemUpdateRequest"
+            outward_info:
+              $ref: "#/components/schemas/OutwardUpdateInfo"
+            cash_receipt_info:
+              $ref: "#/components/schemas/CashReceiptUpdateInfo"
+            bank_deposit:
+              $ref: "#/components/schemas/BankReceiptUpdateInfo"
+            sales_invoice:
+              $ref: "#/components/schemas/SalesInvoiceUpdateInfo"
+            debit_note:
+              $ref: "#/components/schemas/DebitNoteUpdateInfo"
+
+    SalesLineItemUpdateRequest:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        product_id:
+          type: string
+          format: uuid
+        product_name:
+          type: string
+          maxLength: 255
+        warehouse_id:
+          type: string
+          format: uuid
+        unit_id:
+          type: string
+          format: uuid
+        cost_item_id:
+          type: string
+          format: uuid
+        industry_id:
+          type: string
+          format: uuid
+        quantity:
+          $ref: "#/components/schemas/BigDecimal"
+        unit_price:
+          $ref: "#/components/schemas/BigDecimal"
+        subtotal_amount:
+          $ref: "#/components/schemas/BigDecimal"
+        total_amount:
+          $ref: "#/components/schemas/BigDecimal"
+        discount_rate:
+          $ref: "#/components/schemas/BigDecimal"
+        discount_amount:
+          $ref: "#/components/schemas/BigDecimal"
+        vat_rate:
+          $ref: "#/components/schemas/BigDecimal"
+        vat_amount:
+          $ref: "#/components/schemas/BigDecimal"
+        outward_amount:
+          $ref: "#/components/schemas/BigDecimal"
+        freight_amount:
+          $ref: "#/components/schemas/BigDecimal"
+        unit_price_after_tax:
+          $ref: "#/components/schemas/BigDecimal"
+        deduction_tax_amount:
+          $ref: "#/components/schemas/BigDecimal"
+
+    SalesInformationResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        invoice_id:
+          type: string
+          format: uuid
+        invoice_number:
+          type: string
+        invoice_date:
+          $ref: "#/components/schemas/Instant"
+        invoice_template:
+          type: string
+        customer_id:
+          type: string
+          format: uuid
+        customer_code:
+          type: string
+        customer_name:
+          type: string
+        customer_contact_name:
+          type: string
+        customer_address:
+          type: string
+        customer_tax_code:
+          type: string
+        journal_memo:
+          type: string
+        ref_no_finance:
+          type: string
+        ref_date:
+          $ref: "#/components/schemas/Instant"
+        employee_id:
+          type: string
+          format: uuid
+        employee_code:
+          type: string
+        employee_name:
+          type: string
+        is_posted:
+          type: boolean
+        posted_date:
+          $ref: "#/components/schemas/Instant"
+        payment_type:
+          type: string
+          enum: [cash, bank, unpaid]
+        payment_status:
+          type: string
+          enum: [unpaid, partial_paid, paid]
+        invoice_creation_status:
+          type: string
+          enum: [created, not_created]
+        invoice_issuance_status:
+          type: string
+          enum: [not_issued, issued, none]
+        invoice_type:
+          type: string
+          enum: [created_with_invoice, created_without_invoice, invoice_created]
+        discount_type:
+          type: string
+          enum: [none, percent, amount]
+        is_outward_export:
+          type: boolean
+        is_account_enabled:
+          type: boolean
+        subtotal_amount:
+          $ref: "#/components/schemas/BigDecimal"
+        total_amount:
+          $ref: "#/components/schemas/BigDecimal"
+        receivable_amount:
+          $ref: "#/components/schemas/BigDecimal"
+        total_vat_amount:
+          $ref: "#/components/schemas/BigDecimal"
+        invoice_lookup_code:
+          type: string
+        invoice_lookup_url:
+          type: string
+        document_attachment_url:
+          type: string
+        caba_contact_name:
+          type: string
+        discount_amount:
+          $ref: "#/components/schemas/BigDecimal"
+        external_source:
+          type: string
+        external_refno:
+          type: string
+        created_at:
+          $ref: "#/components/schemas/Instant"
+        created_by:
+          type: string
+        updated_at:
+          $ref: "#/components/schemas/Instant"
+        updated_by:
+          type: string
+
+    SalesVoucherDocumentResponse:
+      type: object
+      properties:
+        sa_invoice:
+          $ref: "#/components/schemas/SAInvoiceInformationResponse"
+        sa_voucher:
+          $ref: "#/components/schemas/SalesInformationResponse"
+        line_items:
+          type: array
+          items:
+            $ref: "#/components/schemas/SalesLineItemResponse"
+        outward_line_items:
+          type: array
+          items:
+            $ref: "#/components/schemas/InventoryOutwardLineItemResponse"
+        in_outward:
+          $ref: "#/components/schemas/InventoryOutwardResponse"
+        ba_deposit:
+          $ref: "#/components/schemas/BaDepositInformationResponse"
+        ca_receipt:
+          $ref: "#/components/schemas/CaReceiptInformationResponse"
+        ref_type:
+          type: integer
+          format: int32
+
+    SalesLineItemResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        ref_id:
+          type: string
+          format: uuid
+        ref_voucher_code:
+          type: string
+        product_id:
+          type: string
+          format: uuid
+        warehouse_id:
+          type: string
+          format: uuid
+        variant_id:
+          type: string
+          format: uuid
+        unit_id:
+          type: string
+          format: uuid
+        product_code:
+          type: string
+        product_name:
+          type: string
+        product_type:
+          type: string
+          enum: [product, service, combo]
+        quantity:
+          $ref: "#/components/schemas/BigDecimal"
+        unit_price:
+          $ref: "#/components/schemas/BigDecimal"
+        unit_price_after_tax:
+          $ref: "#/components/schemas/BigDecimal"
+        turnover_amount:
+          $ref: "#/components/schemas/BigDecimal"
+        total_amount:
+          $ref: "#/components/schemas/BigDecimal"
+        discount_rate:
+          $ref: "#/components/schemas/BigDecimal"
+        discount_amount:
+          $ref: "#/components/schemas/BigDecimal"
+        vat_rate_id:
+          type: string
+          format: uuid
+        vat_rate_type:
+          type: string
+        vat_rate_value:
+          $ref: "#/components/schemas/BigDecimal"
+        vat_amount:
+          $ref: "#/components/schemas/BigDecimal"
+        total_cost_price:
+          $ref: "#/components/schemas/BigDecimal"
+        subtotal_amount:
+          $ref: "#/components/schemas/BigDecimal"
+        cost_price:
+          $ref: "#/components/schemas/BigDecimal"
+        cost_item_id:
+          type: string
+          format: uuid
+        cost_item_code:
+          type: string
+        cost_item_name:
+          type: string
+        debit_account:
+          type: string
+        credit_account:
+          type: string
+        discount_account:
+          type: string
+        vat_account:
+          type: string
+        vat_description:
+          type: string
+        description:
+          type: string
+
+    InventoryOutwardResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        ref_no_finance:
+          type: string
+        ref_type:
+          type: integer
+          format: int32
+        ref_id:
+          type: string
+          format: uuid
+        ref_code:
+          type: string
+        description:
+          type: string
+        partner_id:
+          type: string
+          format: uuid
+        partner_code:
+          type: string
+        partner_name:
+          type: string
+        partner_address_vat:
+          type: string
+        receiver_name:
+          type: string
+        employee_id:
+          type: string
+          format: uuid
+        employee_code:
+          type: string
+        employee_name:
+          type: string
+        posted:
+          type: boolean
+        line_items:
+          type: array
+          items:
+            $ref: "#/components/schemas/InventoryOutwardLineItemResponse"
+        total_amount:
+          $ref: "#/components/schemas/BigDecimal"
+        ref_date:
+          $ref: "#/components/schemas/Instant"
+        posted_date:
+          $ref: "#/components/schemas/Instant"
+        created_at:
+          $ref: "#/components/schemas/Instant"
+        updated_at:
+          $ref: "#/components/schemas/Instant"
+
+    InventoryOutwardLineItemResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        product_id:
+          type: string
+          format: uuid
+        variant_id:
+          type: string
+          format: uuid
+        variant_name:
+          type: string
+        variant_sku:
+          type: string
+        warehouse_id:
+          type: string
+          format: uuid
+        unit_id:
+          type: string
+          format: uuid
+        cost_item_id:
+          type: string
+          format: uuid
+        unit_name:
+          type: string
+        cost_item_name:
+          type: string
+        warehouse_name:
+          type: string
+        quantity:
+          $ref: "#/components/schemas/BigDecimal"
+        unit_price:
+          $ref: "#/components/schemas/BigDecimal"
+        total_amount:
+          $ref: "#/components/schemas/BigDecimal"
+        created_at:
+          $ref: "#/components/schemas/Instant"
+        updated_at:
+          $ref: "#/components/schemas/Instant"
+
+    BaDepositInformationResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        ref_no_finance:
+          type: string
+        ref_date:
+          $ref: "#/components/schemas/Instant"
+        posted_date:
+          $ref: "#/components/schemas/Instant"
+        journal_memo:
+          type: string
+        partner_id:
+          type: string
+          format: uuid
+        partner_code:
+          type: string
+        partner_name:
+          type: string
+        partner_address:
+          type: string
+        partner_bank_account_id:
+          type: string
+          format: uuid
+        partner_bank_account_number:
+          type: string
+        partner_bank_account_name:
+          type: string
+        partner_contact_name:
+          type: string
+        bank_name:
+          type: string
+        bank_account_number:
+          type: string
+        bank_account_id:
+          type: string
+          format: uuid
+        amount:
+          $ref: "#/components/schemas/BigDecimal"
+
+    CaReceiptInformationResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        ref_no_finance:
+          type: string
+        ref_date:
+          $ref: "#/components/schemas/Instant"
+        posted_date:
+          $ref: "#/components/schemas/Instant"
+        journal_memo:
+          type: string
+        partner_id:
+          type: string
+          format: uuid
+        partner_code:
+          type: string
+        partner_name:
+          type: string
+        partner_address:
+          type: string
+        partner_type:
+          type: string
+        partner_contact_name:
+          type: string
+        employee_id:
+          type: string
+          format: uuid
+        ref_type:
+          type: string
+        ref_id:
+          type: string
+          format: uuid
+        document_included:
+          type: string
+        status:
+          type: string
+        amount:
+          $ref: "#/components/schemas/BigDecimal"
+
+    AccountObject:
+      type: object
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+        address:
+          type: string
+        contact_name:
+          type: string
+        contact_id:
+          type: string
+        bank_account:
+          type: string
+        bank_name:
+          type: string
+
+    SalesVoucherBulkRequest:
+      type: object
+      properties:
+        ids:
+          type: array
+          minItems: 1
+          maxItems: 250
+          items:
+            type: string
+            format: uuid
+        action:
+          type: string
+          enum: [posted, unposted, deleted]
+      required:
+        - ids
+        - action
+
+    SaVoucherAggregationResponse:
+      type: object
+      properties:
+        total_amount:
+          $ref: "#/components/schemas/BigDecimal"
+        receivable_amount:
+          $ref: "#/components/schemas/BigDecimal"
+        discount_amount:
+          $ref: "#/components/schemas/BigDecimal"
+        total_vat_amount:
+          $ref: "#/components/schemas/BigDecimal"
+        subtotal_amount:
+          $ref: "#/components/schemas/BigDecimal"
+
+    SalesVoucherDetailPaginationResponse:
+      type: object
+      properties:
+        prev_id:
+          type: string
+          format: uuid
+        next_id:
+          type: string
+          format: uuid
+
+    JobResponse:
+      type: object
+      properties:
+        job_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [pending, processing, completed, failed]
+
+    SaleVoucherResponse:
+      type: object
+      properties:
+        info:
+          $ref: "#/components/schemas/SalesInformationResponse"
+        line_items:
+          type: array
+          items:
+            $ref: "#/components/schemas/SalesLineItemResponse"
+
+    OutwardUpdateInfo:
+      type: object
+      properties:
+        journal_memo:
+          type: string
+        ref_no_finance:
+          type: string
+        posted_date:
+          $ref: "#/components/schemas/Instant"
+        ref_date:
+          $ref: "#/components/schemas/Instant"
+        warehouse_id:
+          type: string
+          format: uuid
+
+    CashReceiptUpdateInfo:
+      type: object
+      properties:
+        journal_memo:
+          type: string
+        ref_no_finance:
+          type: string
+        posted_date:
+          $ref: "#/components/schemas/Instant"
+        ref_date:
+          $ref: "#/components/schemas/Instant"
+        amount:
+          $ref: "#/components/schemas/BigDecimal"
+
+    BankReceiptUpdateInfo:
+      type: object
+      properties:
+        bank_account_id:
+          type: string
+          format: uuid
+        bank_name:
+          type: string
+        journal_memo:
+          type: string
+        ref_no_finance:
+          type: string
+        posted_date:
+          $ref: "#/components/schemas/Instant"
+        ref_date:
+          $ref: "#/components/schemas/Instant"
+        amount:
+          $ref: "#/components/schemas/BigDecimal"
+        employee_id:
+          type: string
+          format: uuid
+
+    SalesInvoiceUpdateInfo:
+      type: object
+      properties:
+        journal_memo:
+          type: string
+        ref_no_finance:
+          type: string
+        posted_date:
+          $ref: "#/components/schemas/Instant"
+        ref_date:
+          $ref: "#/components/schemas/Instant"
+        inv_template_no:
+          type: string
+        inv_series:
+          type: string
+        inv_no:
+          type: string
+        inv_date:
+          $ref: "#/components/schemas/Instant"
+        due_date:
+          $ref: "#/components/schemas/Instant"
+        customer_tax_code:
+          type: string
+        customer_code:
+          type: string
+        customer_name:
+          type: string
+        customer_address:
+          type: string
+
+    DebitNoteUpdateInfo:
+      type: object
+      properties:
+        journal_memo:
+          type: string
+        ref_no_finance:
+          type: string
+        posted_date:
+          $ref: "#/components/schemas/Instant"
+        ref_date:
+          $ref: "#/components/schemas/Instant"
+        amount:
+          $ref: "#/components/schemas/BigDecimal"
+        reason:
+          type: string
+        due_date:
+          $ref: "#/components/schemas/Instant"
+
+    SaInvoiceReceivablePartnerInfoResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        journal_memo:
+          type: string
+        ref_no_finance:
+          type: string
+        ref_date:
+          $ref: "#/components/schemas/Instant"
+        is_posted:
+          type: boolean
+        posted_date:
+          $ref: "#/components/schemas/Instant"
+        total_amount:
+          $ref: "#/components/schemas/BigDecimal"
+        receivable_amount:
+          $ref: "#/components/schemas/BigDecimal"
+
+    LinkInvoiceRequest:
+      type: object
+      properties:
+        link_invoice_request:
+          type: object
+          properties:
+            invoice_id:
+              type: string
+              format: uuid
+          required:
+            - invoice_id
+
+    SAInvoiceInformationResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        customer_id:
+          type: string
+          format: uuid
+        customer_code:
+          type: string
+        customer_name:
+          type: string
+        customer_address:
+          type: string
+        customer_tax_code:
+          type: string
+        customer_contact_name:
+          type: string
+        customer_phone_number:
+          type: string
+        customer_email:
+          type: string
+        customer_budget_unit_code:
+          type: string
+        customer_id_number:
+          type: string
+        customer_bank_account:
+          type: string
+        customer_bank_name:
+          type: string
+        ref_type:
+          type: integer
+          format: int32
+        discount_type:
+          type: string
+          enum: [none, percent, amount]
+        invoice_template_no:
+          type: string
+        invoice_series:
+          type: string
+        invoice_number:
+          type: string
+        invoice_date:
+          $ref: "#/components/schemas/Instant"
+        employee_id:
+          type: string
+          format: uuid
+        payment_method:
+          type: string
+          enum: [cash, bank, caba]
+        bank_account_id:
+          type: string
+          format: uuid
+        is_include_invoice:
+          type: boolean
+        is_paid:
+          type: boolean
+        is_posted:
+          type: boolean
+        invoice_status:
+          type: string
+          enum: [draft, posted, cancelled]
+        publish_status:
+          type: string
+          enum: [not_published, published, cancelled]
